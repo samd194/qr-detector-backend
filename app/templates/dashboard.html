@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block body %}
+<header>
+    <strong>QR Fraud Detector — Admin</strong>
+    <div>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/reports">Reports</a>
+        <a href="/admin/logout">Log Out</a>
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h3>Overview</h3>
+        <div class="stats-grid">
+            <div class="stat-box"><div class="stat-number">{{ total_users }}</div><div class="stat-label">Total Users</div></div>
+            <div class="stat-box"><div class="stat-number">{{ total_scans }}</div><div class="stat-label">Total Scans</div></div>
+            <div class="stat-box"><div class="stat-number">{{ safe_count }}</div><div class="stat-label">Safe</div></div>
+            <div class="stat-box"><div class="stat-number">{{ suspicious_count }}</div><div class="stat-label">Suspicious</div></div>
+            <div class="stat-box"><div class="stat-number">{{ dangerous_count }}</div><div class="stat-label">Dangerous</div></div>
+            <div class="stat-box"><div class="stat-number">{{ pending_reports }}</div><div class="stat-label">Pending Reports</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Recent Scans</h3>
+        <table>
+            <tr><th>Domain / Content</th><th>Risk</th><th>Confidence</th><th>Scanned At</th></tr>
+            {% for scan in recent_scans %}
+            <tr>
+                <td>{{ scan.domain or scan.raw_content }}</td>
+                <td><span class="badge badge-{{ scan.risk_level|lower }}">{{ scan.risk_level }}</span></td>
+                <td>{{ scan.confidence }}%</td>
+                <td>{{ scan.scanned_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

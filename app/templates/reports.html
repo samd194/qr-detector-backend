@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block body %}
+<header>
+    <strong>QR Fraud Detector — Admin</strong>
+    <div>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/admin/reports">Reports</a>
+        <a href="/admin/logout">Log Out</a>
+    </div>
+</header>
+<div class="container">
+    <div class="card">
+        <h3>Reported Fake QR Codes</h3>
+        <table>
+            <tr><th>Image</th><th>Description</th><th>Location</th><th>Status</th><th>Reported</th><th>Actions</th></tr>
+            {% for r in reports %}
+            <tr>
+                <td>{% if r.image_url %}<img class="report-img" src="{{ r.image_url }}">{% else %}—{% endif %}</td>
+                <td>{{ r.description }}</td>
+                <td>{% if r.latitude %}{{ "%.3f"|format(r.latitude) }}, {{ "%.3f"|format(r.longitude) }}{% else %}—{% endif %}</td>
+                <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+                <td>{{ r.reported_at }}</td>
+                <td>
+                    {% if r.status == 'pending' %}
+                    <form style="display:inline" method="post" action="/admin/reports/{{ r.id }}/approve">
+                        <button type="submit">Approve</button>
+                    </form>
+                    <form style="display:inline" method="post" action="/admin/reports/{{ r.id }}/reject">
+                        <button type="submit" class="reject">Reject</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
