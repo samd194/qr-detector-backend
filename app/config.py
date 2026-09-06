@@ -27,8 +27,5 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = False
         # Admin panel
-    admin_password: str
-    secret_key: str    
-
 
 settings = Settings()
