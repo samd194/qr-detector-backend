@@ -8,6 +8,7 @@ from app.services.qr_parser import classify_payload, extract_domain, is_https
 from app.services.safe_browsing import check_url_blacklist
 from app.services.whois_check import get_domain_age_days
 from app.services.brand_similarity import check_brand_similarity
+from app.services.upi_check import check_upi_risk
 
 
 async def analyze_content(raw_content: str) -> AnalyzeResponse:
@@ -80,6 +81,29 @@ async def analyze_content(raw_content: str) -> AnalyzeResponse:
                     "This domain does not closely resemble any known brand we checked against.",
             ))
 
+    elif payload_type == PayloadType.UPI:
+        upi_results = check_upi_risk(raw_content)
+
+        weights = {
+            "INVALID_VPA_FORMAT": 50,
+            "UNKNOWN_UPI_HANDLE": 20,
+            "MISSING_PAYEE_NAME": 15,
+            "SUSPICIOUS_PAYEE_NAME": 45,
+            "LARGE_PREFILLED_AMOUNT": 10,
+        }
+        labels = {
+            "INVALID_VPA_FORMAT": "UPI ID Format",
+            "UNKNOWN_UPI_HANDLE": "Recognized Bank/PSP",
+            "MISSING_PAYEE_NAME": "Payee Name Present",
+            "SUSPICIOUS_PAYEE_NAME": "Payee Name Check",
+            "LARGE_PREFILLED_AMOUNT": "Pre-filled Amount",
+        }
+
+        for code, (triggered, detail) in upi_results.items():
+            if triggered:
+                score += weights[code]
+            reasons.append(RiskFactor(code=code, label=labels[code], triggered=triggered, detail=detail))
+
     if score >= 70:
         risk_level = RiskLevel.DANGEROUS
     elif score >= 30:
@@ -87,7 +111,10 @@ async def analyze_content(raw_content: str) -> AnalyzeResponse:
     else:
         risk_level = RiskLevel.SAFE
 
-    confidence = min(96, max(50, score + 40))
+    # Safety score: inverse of risk score. Safe QR codes read as high %,
+    # dangerous ones read as low % — more intuitive than a raw risk confidence.
+    safety_score = 100 - score
+    confidence = max(5, min(95, safety_score))
 
     return AnalyzeResponse(
         payload_type=payload_type,
